@@ -18,11 +18,14 @@ def get_limits(color_dict):
     return limits
 
 colors = {
-    'red': [0, 0, 255],
-    'blue': [255, 0, 0],
-    'green': [0, 255, 0],
-    'yellow': [0, 255, 255]
+    'red': [139, 0, 0],
+    'white': [255, 255, 255],
+    'blue': [230, 216, 173],
+    'green': [80, 215, 90],
+    'yellow': [65, 210, 200],
+    'orange': [80, 140, 235],
 }
+print(get_limits(colors))
 
 ok = True
 capture = cv.VideoCapture(0)
@@ -34,10 +37,18 @@ while ok:
     limits = get_limits(colors)
     for color_name, hsv_value in limits.items():
         mask = cv.inRange(hsv, hsv_value[0], hsv_value[1])
-        contours, _ = cv.findContours(mask, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+
+        kernel = np.ones((5, 5), np.uint8)
+        mask = cv.morphologyEx(mask, cv.MORPH_OPEN, kernel)
+        mask = cv.GaussianBlur(mask, (5, 5), 0)
+
+        cv.imshow(color_name, mask)
+        contours, _ = cv.findContours(mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
         for contour in contours:
+            area = cv.contourArea(contour)
             x, y, w, h = cv.boundingRect(contour)
-            if w > 15 and h > 15:
+            aspect_ratio = w / h
+            if area > 1000 and 0.5 < aspect_ratio < 2.0:
                 frame = cv.rectangle(frame, (x, y), (x + w, y + h), color=colors[color_name], thickness=2)
                 print(f"{color_name} object at: x={x}, y={y}, width={w}, height={h}")
 
